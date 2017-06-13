@@ -64,5 +64,8 @@ class TestBinarize(TestCase):
         self.assertAlmostEqual(out['analytic_trigger_coincidence'], out_expected['analytic_trigger_coincidence'])
 
     def test_eca_analysis_shuffle(self):
-        out = eca.eca_analysis_suffle(self.flowering_day,self.temperature)
+        out = eca.eca_analysis(self.flowering_day, self.temperature,test_method='waiting_time')
         print(out)
+        out = eca.eca_analysis(self.flowering_day, self.temperature, test_method='shuffle')
+        print(out)
+        # We just want to check that this is not throwing any errors
