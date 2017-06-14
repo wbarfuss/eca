@@ -53,21 +53,15 @@ def aggregated_precursor_coincidence_rate(seriesAs, seriesBs, deltaT=0, tau=0, s
             'precursor_coincidences': precursor_coincidences}
 
 
+def roll_in(array, shift):
+    return array if shift == 0 else np.concatenate((np.zeros(shift), array[:-shift]))
+
+
 def trigger_coincidence_rate(seriesA, seriesB, deltaT=0, tau=0, sym=False, **kwagrs):
     b_events = seriesB[seriesB == 1].count()
     trigger_coincidences = 0  # trigger_coincidences
-    ts_end = seriesA.index[-1]
-    ts_start = seriesA.index[0]
-    for date, event in seriesB.iteritems():
-        if event == 1:
-            start = date + tau
-            end = date + tau + deltaT
-            if sym:
-                start -= deltaT
-            end = min(ts_end, end)
-            start = max(ts_start, start)
-            if seriesA[start:end].max() == 1:
-                trigger_coincidences += 1
+    shifted_values = [(seriesB.values == roll_in(seriesA, shift)) for shift in range(0 + tau, tau + deltaT + 1)]
+    trigger_coincidences = len(seriesB[np.all([seriesB.values == 1, np.any(shifted_values, axis=0)], axis=0)])
     tcr = 0 if b_events == 0 else trigger_coincidences / b_events
     return {'trigger_coincidence_rate': tcr,
             'b_events': b_events,
