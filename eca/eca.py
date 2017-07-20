@@ -42,6 +42,17 @@ def precursor_coincidence_rate(seriesA, seriesB, deltaT=0, tau=0, sym=False, **k
             'precursor_coincidences': precursor_coincidences}
 
 
+def aggregated_precursor_coincidence_rate(seriesAs, seriesBs, deltaT=0, tau=0, sym=False, **kwagrs):
+    individual_rates = [precursor_coincidence_rate(seriesA, seriesB, deltaT, tau, sym)
+                            for (seriesA, seriesB) in zip(seriesAs, seriesBs)]
+    precursor_coincidences = sum([r["precursor_coincidences"] for r in individual_rates])
+    a_events = sum([r["a_events"] for r in individual_rates])
+    pcr = 0 if a_events == 0 else precursor_coincidences / a_events
+    return {'precursor_coincidence_rate': pcr,
+            'a_events': a_events,
+            'precursor_coincidences': precursor_coincidences}
+
+
 def trigger_coincidence_rate(seriesA, seriesB, deltaT=0, tau=0, sym=False, **kwagrs):
     b_events = seriesB[seriesB == 1].count()
     trigger_coincidences = 0  # trigger_coincidences
@@ -57,6 +68,17 @@ def trigger_coincidence_rate(seriesA, seriesB, deltaT=0, tau=0, sym=False, **kwa
             start = max(ts_start, start)
             if seriesA[start:end].max() == 1:
                 trigger_coincidences += 1
+    tcr = 0 if b_events == 0 else trigger_coincidences / b_events
+    return {'trigger_coincidence_rate': tcr,
+            'b_events': b_events,
+            'trigger_coincidences': trigger_coincidences}
+
+
+def aggregated_trigger_coincidence_rate(seriesAs, seriesBs, deltaT=0, tau=0, sym=False, **kwagrs):
+    individual_rates = [trigger_coincidence_rate(seriesA, seriesB, deltaT, tau, sym)
+                            for (seriesA, seriesB) in zip(seriesAs, seriesBs)]
+    trigger_coincidences = sum([r["trigger_coincidences"] for r in individual_rates])
+    b_events = sum([r["b_events"] for r in individual_rates])
     tcr = 0 if b_events == 0 else trigger_coincidences / b_events
     return {'trigger_coincidence_rate': tcr,
             'b_events': b_events,
@@ -182,3 +204,18 @@ def eca_analysis(seriesA, seriesB, tau=0, deltaT=0, alpha=0.05, sym=False, test_
     t_out = trigger_coincidence_rate(**input)
     test_out = test_methods[test_method](**t_out, **p_out, **input)
     return {**p_out, **t_out, **test_out}
+
+
+def aggregated_eca_analysis(seriesAs, seriesBs, tau=0, deltaT=0, alpha=0.05, sym=False, test_method='poisson'):
+    input = {'seriesAs': seriesAs,
+             'seriesBs': seriesBs,
+             'tau': tau,
+             'deltaT': deltaT,
+             'sym': sym,
+             'alpha': alpha,
+             }
+             #'no_nan_length': len(seriesA) - seriesA.isnull().sum()}
+    p_out = aggregated_precursor_coincidence_rate(**input)
+    t_out = aggregated_trigger_coincidence_rate(**input)
+    #test_out = test_methods[test_method](**t_out, **p_out, **input)
+    return {**p_out, **t_out} #, **test_out}
