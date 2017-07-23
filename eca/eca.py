@@ -20,22 +20,24 @@ def binarize_quantile(x, quantile=0.9, **kwargs):
     return binarize(x, thres=q, **kwargs)
 
 
+def roll_back(array, shift):
+    return np.concatenate((array[:-shift], np.zeros(shift)))
+
+
+def roll_in(array, shift):
+    if shift < 0:
+        return roll_back(array, abs(shift))
+    return array if shift == 0 else np.concatenate((np.zeros(shift), array[:-shift]))
+
+
 def precursor_coincidence_rate(seriesA, seriesB, deltaT=0, tau=0, sym=False, **kwagrs):
-    ts_end = seriesA.index[-1]
-    ts_start = seriesA.index[0]
     a_events = seriesA[seriesA == 1].count()
-    precursor_coincidences = 0
-    for date, event in seriesA.iteritems():
-        if event == 1:
-            # check occurrence of another event in [i-tau-deltaT;i-tau(+deltaT)]
-            start = date - tau - deltaT
-            end = date - tau
-            if not sym:
-                end += deltaT
-            end = min(ts_end, end)
-            start = max(ts_start, start)
-            if seriesB[start:end].max() == 1:
-                precursor_coincidences += 1
+    if sym:
+        coincidence_interval = range(0 - tau - deltaT, 0 - tau + deltaT + 1)
+    else:
+        coincidence_interval = range(0 - tau - deltaT, 0 - tau + 1)
+    shifted_values = [(seriesA.values == roll_in(seriesB, shift)) for shift in coincidence_interval]
+    precursor_coincidences = len(seriesA[np.all([seriesA.values == 1, np.any(shifted_values, axis=0)], axis=0)])
     pcr = 0 if a_events == 0 else precursor_coincidences / a_events
     return {'precursor_coincidence_rate': pcr,
             'a_events': a_events,
@@ -59,8 +61,15 @@ def roll_in(array, shift):
 
 def trigger_coincidence_rate(seriesA, seriesB, deltaT=0, tau=0, sym=False, **kwagrs):
     b_events = seriesB[seriesB == 1].count()
-    trigger_coincidences = 0  # trigger_coincidences
-    shifted_values = [(seriesB.values == roll_in(seriesA, shift)) for shift in range(0 + tau, tau + deltaT + 1)]
+    if sym:
+        coincidence_interval = range(tau + 0 - deltaT, tau + deltaT + 1)
+    else:
+        coincidence_interval = range(tau + 0, tau + deltaT + 1)
+    ## shifted_values ##
+    # type: matrix
+    # shape: (b_events, deltaT)
+    # contains: [time,shift] := Is there an coincidence of seriesB[time] and seriesA[time+shift]
+    shifted_values = [(seriesB.values == roll_in(seriesA, shift)) for shift in coincidence_interval]
     trigger_coincidences = len(seriesB[np.all([seriesB.values == 1, np.any(shifted_values, axis=0)], axis=0)])
     tcr = 0 if b_events == 0 else trigger_coincidences / b_events
     return {'trigger_coincidence_rate': tcr,

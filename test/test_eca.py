@@ -52,6 +52,16 @@ class TestBinarize(TestCase):
         self.assertEqual(pcr_actual, pcr_expected)
         self.assertEqual(tgr_actual, tcr_expected)
 
+    def test_coincidence_rate_shifted(self):
+        # check for shifting fails
+        temperature = self.temperature
+        flowering_day = self.flowering_day
+        pcr_actual = eca.precursor_coincidence_rate(temperature, flowering_day, deltaT=2)[
+            'precursor_coincidence_rate']
+        tgr_actual = eca.trigger_coincidence_rate(temperature, flowering_day, deltaT=2)[
+            'trigger_coincidence_rate']
+
+
     def test_eca_analysis(self):
         out_expected = {'analytic_precursor_coincidence': 0.017775577,
                         'analytic_trigger_coincidence': 0.017775577,
