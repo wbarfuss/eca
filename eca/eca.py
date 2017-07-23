@@ -55,9 +55,6 @@ def aggregated_precursor_coincidence_rate(seriesAs, seriesBs, deltaT=0, tau=0, s
             'precursor_coincidences': precursor_coincidences}
 
 
-def roll_in(array, shift):
-    return array if shift == 0 else np.concatenate((np.zeros(shift), array[:-shift]))
-
 
 def trigger_coincidence_rate(seriesA, seriesB, deltaT=0, tau=0, sym=False, **kwagrs):
     b_events = seriesB[seriesB == 1].count()
