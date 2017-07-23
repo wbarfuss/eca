@@ -21,7 +21,7 @@ def binarize_quantile(x, quantile=0.9, **kwargs):
 
 
 def roll_back(array, shift):
-    return np.concatenate((array[:-shift], np.zeros(shift)))
+    return np.concatenate((array[shift:], np.zeros(shift)))
 
 
 def roll_in(array, shift):
@@ -33,9 +33,9 @@ def roll_in(array, shift):
 def precursor_coincidence_rate(seriesA, seriesB, deltaT=0, tau=0, sym=False, **kwagrs):
     a_events = seriesA[seriesA == 1].count()
     if sym:
-        coincidence_interval = range(0 - tau - deltaT, 0 - tau + deltaT + 1)
+        coincidence_interval = range(0 + tau - deltaT, 0 + tau + deltaT + 1)
     else:
-        coincidence_interval = range(0 - tau - deltaT, 0 - tau + 1)
+        coincidence_interval = range(0 + tau - deltaT, 0 + tau + 1)
     shifted_values = [(seriesA.values == roll_in(seriesB, shift)) for shift in coincidence_interval]
     precursor_coincidences = len(seriesA[np.all([seriesA.values == 1, np.any(shifted_values, axis=0)], axis=0)])
     pcr = 0 if a_events == 0 else precursor_coincidences / a_events
